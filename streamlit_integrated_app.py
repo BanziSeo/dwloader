@@ -229,6 +229,9 @@ with tab2:
             # 티커 정보 수집
             info_df, failed = get_ticker_info_batch(symbols_to_process, update_progress)
             
+            progress_bar.empty()
+            status_text.empty()
+            
             if not info_df.empty:
                 # 원본 티커 정보와 병합
                 merged_df = st.session_state.ticker_df.merge(info_df, on='Symbol', how='inner', suffixes=('', '_info'))
@@ -251,19 +254,32 @@ with tab2:
                 
                 # 결과 표시
                 st.subheader("필터링된 종목")
-                st.dataframe(filtered_df[['Symbol', 'Name', 'Last Sale', 'Market Cap', 'Volume']].head(20))
-                
-                # nasdaq_data.csv 형식으로 다운로드
-                csv = filtered_df.to_csv(index=False)
+                if len(filtered_df) > 0:
+                    st.dataframe(filtered_df[['Symbol', 'Name', 'Last Sale', 'Market Cap', 'Volume']].head(20))
+                    
+                    # nasdaq_data.csv 형식으로 다운로드
+                    csv = filtered_df.to_csv(index=False)
+                    st.download_button(
+                        label="💾 nasdaq_data.csv 다운로드",
+                        data=csv,
+                        file_name="nasdaq_data.csv",
+                        mime="text/csv",
+                        key="download_nasdaq_data"
+                    )
+                else:
+                    st.warning("필터 조건을 충족하는 종목이 없습니다. 필터 조건을 조정해보세요.")
+                    
+                # 필터링 전 데이터도 다운로드 가능하게
+                st.subheader("전체 수집 데이터")
+                st.info(f"필터링 전 전체: {len(merged_df)}개 종목")
+                csv_all = merged_df.to_csv(index=False)
                 st.download_button(
-                    label="💾 nasdaq_data.csv 다운로드",
-                    data=csv,
-                    file_name="nasdaq_data.csv",
-                    mime="text/csv"
+                    label="💾 전체 데이터 다운로드 (필터링 전)",
+                    data=csv_all,
+                    file_name="nasdaq_data_all.csv",
+                    mime="text/csv",
+                    key="download_all_data"
                 )
-            
-            progress_bar.empty()
-            status_text.empty()
     else:
         st.warning("먼저 Step 1에서 티커 리스트를 다운로드하세요!")
 
